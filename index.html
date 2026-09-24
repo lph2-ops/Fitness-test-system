@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>學生體適能數據記錄與評分系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; -webkit-tap-highlight-color: transparent; }
+        .hidden { display: none !important; }
+        .modal { background: rgba(0,0,0,0.6); backdrop-filter: blur(2px); }
+        /* 自訂滾動條以提升移動端體驗 */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="pb-10 text-gray-800">
+    <!-- Navigation -->
+    <nav class="bg-blue-600 text-white p-4 shadow-md flex flex-col md:flex-row justify-between items-center gap-4 sticky top-0 z-40">
+        <h1 class="text-xl font-bold text-center">🏃 學生體適能記錄與評分系統</h1>
+        <div class="flex flex-wrap justify-center gap-2">
+            <button onclick="openStandardsModal()" class="bg-blue-500 hover:bg-blue-400 px-4 py-2 rounded text-sm md:text-base font-medium shadow-sm">📋 評分標準</button>
+            <button id="navStudentBtn" onclick="switchView('student')" class="bg-blue-700 px-4 py-2 rounded text-sm md:text-base font-medium shadow-sm transition-colors">學生輸入</button>
+            <button id="navTeacherBtn" onclick="promptTeacherLogin()" class="bg-blue-500 hover:bg-blue-400 px-4 py-2 rounded text-sm md:text-base font-medium shadow-sm transition-colors">教師管理</button>
+        </div>
+    </nav>
+
+    <!-- Student Portal -->
+    <div id="studentPortal" class="max-w-3xl mx-auto mt-6 p-4 md:p-8 bg-white md:rounded-xl shadow-lg">
+        <h2 class="text-2xl font-bold text-center mb-6 text-gray-800">學生數據輸入</h2>
+        <form id="studentForm" onsubmit="submitStudentData(event)" class="space-y-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                    <label class="block text-gray-700 font-medium mb-1">姓名</label>
+                    <input type="text" id="sName" required class="w-full border-gray-300 border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-medium mb-1">性別</label>
+                    <select id="sGender" required class="w-full border-gray-300 border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                        <option value="" disabled selected>請選擇</option>
+                        <option value="M">男</option>
+                        <option value="F">女</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-1">班別 (例: 3A)</label>
+                        <input type="text" id="sClass" required class="w-full border-gray-300 border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-1">班號</label>
+                        <input type="number" id="sClassNo" required class="w-full border-gray-300 border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-medium mb-1">出生年份</label>
+                    <select id="sYear" required class="w-full border-gray-300 border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                        <option value="" disabled selected>請選擇年份</option>
+                        <option value="2015">2015</option>
+                        <option value="2014">2014</option>
+                        <option value="2013">2013</option>
+                        <option value="2012">2012</option>
+                        <option value="2011">2011</option>
+                        <option value="2010">2010</option>
+                        <option value="2009">2009 或以前</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mt-6 p-4 md:p-6 bg-blue-50 rounded-xl border border-blue-100">
+                <h3 class="text-lg font-bold mb-4 text-blue-800">體適能測試數據 <span class="text-sm font-normal text-blue-600">(選填，留空視為未完成)</span></h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-1">坐地前伸 (cm)</label>
+                        <input type="number" step="any" id="sSitReach" placeholder="支援小數" class="w-full border p-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-1">仰臥起坐 (次/分)</label>
+                        <input type="number" id="sSitups" class="w-full border p-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-1">立定跳遠 (cm)</label>
+                        <input type="number" id="sJump" class="w-full border p-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-1">掌上壓 (次)</label>
+                        <input type="number" id="sPushups" class="w-full border p-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="sm:col-span-2 md:col-span-1">
+                        <label class="block text-gray-700 font-medium mb-1">9分鐘跑 (m)</label>
+                        <input type="number" step="any" id="sRun" placeholder="支援小數" class="w-full border p-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl text-lg shadow-md transition-transform active:scale-95 mt-4">提交並查看成績</button>
+        </form>
+
+        <div id="studentResult" class="hidden mt-6 border-t pt-6">
+            <h3 class="text-2xl font-bold text-center mb-6">個人成績單</h3>
+            <div id="medalContainer" class="text-center mb-6 text-xl font-bold p-6 rounded-xl shadow-inner"></div>
+            
+            <div class="flex flex-col md:flex-row gap-6">
+                <div class="flex-1 bg-gray-50 p-5 rounded-xl border">
+                    <h4 class="font-bold text-lg mb-4 text-center md:text-left">各項得分 (滿分10分)</h4>
+                    <ul id="scoreList" class="space-y-3 text-gray-700 text-lg"></ul>
+                </div>
+                <div class="flex-1 flex justify-center items-center min-h-[250px]">
+                    <canvas id="studentRadarChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="mt-6 bg-blue-50 border-l-4 border-blue-500 p-5 rounded-r-xl">
+                <h4 class="font-bold text-blue-800 mb-2 flex items-center gap-2"><span class="text-xl">💡</span> 體適能改善建議</h4>
+                <p id="studentAdvice" class="text-gray-700 leading-relaxed"></p>
+            </div>
+            
+            <button onclick="resetStudentForm()" class="mt-8 w-full bg-gray-500 hover:bg-gray-600 text-white py-4 rounded-xl font-bold text-lg shadow-md transition-transform active:scale-95">返回重新輸入</button>
+        </div>
+    </div>
+
+    <!-- Teacher Portal -->
+    <div id="teacherPortal" class="hidden max-w-7xl mx-auto mt-6 p-4 md:p-8 bg-white md:rounded-xl shadow-lg">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            <h2 class="text-2xl font-bold text-gray-800">教師管理儀表板</h2>
+            <div class="grid grid-cols-2 md:flex gap-2 w-full md:w-auto">
+                <button onclick="generateRandomData()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-2.5 rounded-lg text-sm font-medium shadow-sm flex items-center justify-center gap-1">🎲 生成數據</button>
+                <button onclick="exportCSV()" class="bg-green-500 hover:bg-green-600 text-white px-3 py-2.5 rounded-lg text-sm font-medium shadow-sm flex items-center justify-center gap-1">📥 匯出 CSV</button>
+                <button onclick="confirmBulkDelete()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2.5 rounded-lg text-sm font-medium shadow-sm flex items-center justify-center gap-1">🗑️ 刪除已選</button>
+                <button onclick="confirmDeleteAll()" class="bg-red-700 hover:bg-red-800 text-white px-3 py-2.5 rounded-lg text-sm font-medium shadow-sm flex items-center justify-center gap-1">⚠️ 清空數據</button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6 bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-sm">
+            <div>
+                <label class="block text-sm font-bold text-gray-600 mb-1">搜尋姓名/班別</label>
+                <input type="text" id="filterSearch" oninput="renderTable()" placeholder="輸入關鍵字..." class="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-gray-600 mb-1">狀態與缺項過濾</label>
+                <select id="filterStatus" onchange="renderTable()" class="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                    <option value="all">全部狀態</option>
+                    <option value="completed">✅ 已完成</option>
+                    <option value="incomplete">⚠️ 未完成 (任意缺項)</option>
+                    <option value="missing_sitreach">❌ 缺：坐地前伸</option>
+                    <option value="missing_situps">❌ 缺：仰臥起坐</option>
+                    <option value="missing_longjump">❌ 缺：立定跳遠</option>
+                    <option value="missing_pushups">❌ 缺：掌上壓</option>
+                    <option value="missing_run">❌ 缺：9分鐘跑</option>
+                </select>
+            </div>
+            <div class="sm:col-span-2 md:col-span-1">
+                <label class="block text-sm font-bold text-gray-600 mb-1">排序方式</label>
+                <select id="filterSort" onchange="renderTable()" class="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                    <option value="newest">加入時間 (新至舊)</option>
+                    <option value="oldest">加入時間 (舊至新)</option>
+                    <option value="scoreDesc">總分 (高至低)</option>
+                    <option value="scoreAsc">總分 (低至高)</option>
+                    <option value="class">班別及班號</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto -mx-4 md:mx-0 shadow-sm border-y md:border rounded-none md:rounded-lg">
+            <table class="min-w-full bg-white text-sm whitespace-nowrap">
+                <thead class="bg-gray-100 border-b">
+                    <tr>
+                        <th class="p-3 text-center"><input type="checkbox" id="selectAllCheckbox" onclick="toggleSelectAll(this)" class="w-4 h-4 cursor-pointer"></th>
+                        <th class="p-3 text-left font-semibold">班別(號)</th>
+                        <th class="p-3 text-left font-semibold">姓名</th>
+                        <th class="p-3 text-left font-semibold">性別</th>
+                        <th class="p-3 text-left font-semibold">狀態</th>
+                        <th class="p-3 text-left font-semibold">總分</th>
+                        <th class="p-3 text-center font-semibold">坐地前伸</th>
+                        <th class="p-3 text-center font-semibold">仰臥起坐</th>
+                        <th class="p-3 text-center font-semibold">立定跳遠</th>
+                        <th class="p-3 text-center font-semibold">掌上壓</th>
+                        <th class="p-3 text-center font-semibold">9分鐘跑</th>
+                        <th class="p-3 text-center font-semibold sticky right-0 bg-gray-100 shadow-[-4px_0_4px_rgba(0,0,0,0.05)]">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="teacherTableBody" class="divide-y text-gray-700"></tbody>
+            </table>
+            <div id="emptyState" class="hidden text-center py-8 text-gray-500 bg-white">沒有符合條件的數據</div>
+        </div>
+
+        <!-- Analytics Section -->
+        <div class="mt-10 border-t pt-8">
+            <h3 class="text-xl font-bold mb-6 flex items-center gap-2"><span class="text-2xl">📈</span> 全校數據分析</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-4 border rounded-xl shadow-sm">
+                    <h4 class="text-center font-semibold mb-4 text-gray-700">各測試項目平均得分 (找出最弱項目)</h4>
+                    <div class="w-full min-h-[250px] flex justify-center"><canvas id="itemAvgChart"></canvas></div>
+                </div>
+                <div class="bg-white p-4 border rounded-xl shadow-sm">
+                    <h4 class="text-center font-semibold mb-4 text-gray-700">各班級平均總分比較</h4>
+                    <div class="w-full min-h-[250px] flex justify-center"><canvas id="classAvgChart"></canvas></div>
+                </div>
+            </div>
+            <div class="mt-6 bg-yellow-50 border-l-4 border-yellow-500 p-5 rounded-r-xl">
+                <h4 class="font-bold text-yellow-800 mb-2 flex items-center gap-2">📌 教師教學建議 <span class="text-sm font-normal text-yellow-700">(基於全校最弱項目)</span></h4>
+                <p id="teacherAdvice" class="text-gray-700 leading-relaxed">暫無足夠數據生成建議。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="fixed inset-0 modal hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-6 md:p-8 rounded-2xl w-full max-w-sm text-center shadow-2xl transition-transform transform scale-100">
+            <h3 class="text-2xl font-bold mb-2 text-gray-800">教師登入</h3>
+            <p class="text-sm text-gray-500 mb-6">請輸入管理員 PIN 碼</p>
+            <input type="password" id="pinInput" placeholder="輸入密碼" class="w-full border-2 p-3 text-center text-2xl tracking-[0.5em] rounded-xl mb-6 focus:border-blue-500 focus:outline-none">
+            <div class="flex gap-3">
+                <button onclick="document.getElementById('loginModal').classList.add('hidden')" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 rounded-xl font-medium transition-colors">取消</button>
+                <button onclick="verifyPin()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-medium shadow-md transition-colors">登入</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Standards Modal -->
+    <div id="standardsModal" class="fixed inset-0 modal hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-4 md:p-6 rounded-2xl w-full max-w-4xl h-[85vh] md:h-auto md:max-h-[90vh] flex flex-col shadow-2xl">
+            <div class="flex justify-between items-center mb-4 shrink-0">
+                <h3 class="text-xl md:text-2xl font-bold text-gray-800">📋 體適能評分標準 <span class="text-sm font-normal text-gray-500">(0-10分)</span></h3>
+                <button onclick="closeStandardsModal()" class="text-gray-400 hover:text-red-500 text-3xl font-bold rounded-full w-10 h-10 flex items-center justify-center hover:bg-gray-100 transition-colors">&times;</button>
+            </div>
+            
+            <div class="flex border-b mb-4 shrink-0">
+                <button onclick="switchStandardTab('M')" id="tabM" class="flex-1 py-3 font-bold text-blue-600 border-b-2 border-blue-600 text-sm md:text-base">👦 男生標準</button>
+                <button onclick="switchStandardTab('F')" id="tabF" class="flex-1 py-3 font-bold text-gray-500 text-sm md:text-base">👧 女生標準</button>
+            </div>
+            
+            <div class="mb-4 flex flex-col sm:flex-row sm:items-center gap-2 shrink-0">
+                <label class="font-bold text-gray-700">選擇出生年份：</label>
+                <select id="stdYearSelect" onchange="renderStandardTable()" class="border p-2 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
+                    <option value="2014">2014</option>
+                    <option value="2013">2013</option>
+                    <option value="2012">2012</option>
+                    <option value="2011">2011</option>
+                    <option value="2010">2010</option>
+                    <option value="2009">2009 或以前</option>
+                </select>
+            </div>
+
+            <div class="overflow-x-auto overflow-y-auto flex-1 border rounded-xl shadow-inner bg-gray-50">
+                <table class="min-w-full bg-white text-center text-sm whitespace-nowrap">
+                    <thead class="bg-gray-100 sticky top-0 shadow-sm">
+                        <tr>
+                            <th class="p-3 border-b font-bold text-gray-700">分數</th>
+                            <th class="p-3 border-b font-bold text-gray-700">坐地前伸 (cm)</th>
+                            <th class="p-3 border-b font-bold text-gray-700">仰臥起坐 (次)</th>
+                            <th class="p-3 border-b font-bold text-gray-700">立定跳遠 (cm)</th>
+                            <th class="p-3 border-b font-bold text-gray-700">掌上壓 (次)</th>
+                            <th class="p-3 border-b font-bold text-gray-700">9分鐘跑 (m)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stdTableBody" class="divide-y text-gray-700"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Student Modal -->
+    <div id="editModal" class="fixed inset-0 modal hidden flex items-center justify-center z-50 p-4 overflow-y-auto">
+        <div class="bg-white p-5 md:p-6 rounded-2xl w-full max-w-md my-auto shadow-2xl">
+            <h3 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">✏️ 修改學生數據</h3>
+            <input type="hidden" id="editId">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                <div><label class="text-sm font-semibold text-gray-600 block mb-1">班別</label><input type="text" id="eClass" class="w-full border p-2 rounded-lg bg-gray-50 focus:bg-white outline-none focus:ring-2"></div>
+                <div><label class="text-sm font-semibold text-gray-600 block mb-1">班號</label><input type="number" id="eClassNo" class="w-full border p-2 rounded-lg bg-gray-50 focus:bg-white outline-none focus:ring-2"></div>
+                <div class="sm:col-span-2"><label class="text-sm font-semibold text-gray-600 block mb-1">姓名</label><input type="text" id="eName" class="w-full border p-2 rounded-lg bg-gray-50 focus:bg-white outline-none focus:ring-2"></div>
+                
+                <div class="sm:col-span-2 mt-2 pt-2 border-t"><p class="text-xs text-gray-500 mb-2">留空代表未完成該項目</p></div>
+                <div><label class="text-sm font-semibold text-gray-600 block mb-1">坐地前伸</label><input type="number" step="any" id="eSitReach" class="w-full border p-2 rounded-lg focus:ring-2 outline-none"></div>
+                <div><label class="text-sm font-semibold text-gray-600 block mb-1">仰臥起坐</label><input type="number" id="eSitups" class="w-full border p-2 rounded-lg focus:ring-2 outline-none"></div>
+                <div><label class="text-sm font-semibold text-gray-600 block mb-1">立定跳遠</label><input type="number" id="eJump" class="w-full border p-2 rounded-lg focus:ring-2 outline-none"></div>
+                <div><label class="text-sm font-semibold text-gray-600 block mb-1">掌上壓</label><input type="number" id="ePushups" class="w-full border p-2 rounded-lg focus:ring-2 outline-none"></div>
+                <div class="sm:col-span-2"><label class="text-sm font-semibold text-gray-600 block mb-1">9分鐘跑</label><input type="number" step="any" id="eRun" class="w-full border p-2 rounded-lg focus:ring-2 outline-none"></div>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="document.getElementById('editModal').classList.add('hidden')" class="flex-1 bg-gray-200 hover:bg-gray-300 py-3 rounded-xl font-medium transition-colors">取消</button>
+                <button onclick="saveEdit()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-medium shadow-md transition-colors">儲存修改</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div id="confirmModal" class="fixed inset-0 modal hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-6 rounded-2xl w-full max-w-sm text-center shadow-2xl transform transition-transform scale-100">
+            <div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">⚠️</div>
+            <h3 class="text-xl font-bold mb-2 text-gray-800" id="confirmTitle">確認刪除</h3>
+            <p class="mb-6 text-gray-600 text-sm" id="confirmMsg"></p>
+            <div class="flex gap-3">
+                <button onclick="closeConfirm()" class="flex-1 bg-gray-200 hover:bg-gray-300 py-3 rounded-xl font-medium transition-colors">取消</button>
+                <button id="confirmBtn" class="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl font-medium shadow-md transition-colors">確認刪除</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data Models
+        let students = JSON.parse(localStorage.getItem('fitnessData')) || [];
+        let currentStdGender = 'M';
+        let studentChartInstance = null;
+        let itemAvgChartInst = null;
+        let classAvgChartInst = null;
+
+        // Fitness Standards Data (0-10) Array map: [10pt, 9pt, 8pt, 7pt, 6pt, 5pt, 4pt, 3pt, 2pt, 1pt]
+        const stdData = {
+            '2014': { sitAndReach: [32, 30, 28, 26, 24, 22, 19, 17, 15, 14], situps: [40, 38, 35, 32, 28, 25, 22, 19, 16, 13], longJump: [172, 165, 158, 151, 144, 137, 132, 125, 118, 111], pushups: [16, 13, 9, 6, 3, 2, 1, 1, 1, 1], run: [1610, 1545, 1480, 1400, 1320, 1255, 1190, 1150, 1110, 1070] },
+            '2013': { sitAndReach: [33, 30, 28, 26, 24, 21, 19, 17, 15, 13], situps: [42, 39, 36, 33, 31, 27, 24, 21, 19, 17], longJump: [191, 183, 175, 168, 161, 154, 147, 140, 133, 126], pushups: [20, 16, 12, 9, 6, 5, 4, 3, 2, 1], run: [1680, 1605, 1530, 1450, 1370, 1295, 1220, 1166, 1113, 1060] },
+            '2012': { sitAndReach: [36, 33, 31, 28, 25, 21, 18, 16, 14, 13], situps: [42, 39, 37, 34, 31, 28, 25, 23, 21, 20], longJump: [201, 194, 187, 180, 173, 166, 159, 153, 147, 141], pushups: [23, 19, 15, 13, 11, 8, 5, 2, 1, 1], run: [1770, 1685, 1600, 1520, 1440, 1365, 1290, 1236, 1183, 1130] },
+            '2011': { sitAndReach: [38, 36, 34, 32, 29, 26, 23, 20, 17, 14], situps: [45, 43, 41, 39, 36, 33, 30, 27, 24, 22], longJump: [212, 207, 201, 195, 189, 183, 177, 169, 161, 153], pushups: [26, 23, 20, 17, 14, 11, 8, 5, 3, 1], run: [1790, 1729, 1668, 1606, 1544, 1482, 1420, 1346, 1273, 1200] },
+            '2010': { sitAndReach: [39, 37, 35, 32, 29, 26, 23, 20, 18, 16], situps: [45, 43, 41, 38, 35, 32, 29, 26, 23, 21], longJump: [225, 219, 213, 206, 199, 192, 185, 175, 165, 155], pushups: [30, 26, 22, 19, 16, 13, 9, 5, 3, 1], run: [1760, 1703, 1646, 1589, 1531, 1473, 1415, 1347, 1278, 1210] },
+            '2009': { sitAndReach: [40, 38, 36, 34, 31, 28, 25, 21, 18, 15], situps: [45, 43, 41, 39, 37, 34, 31, 28, 25, 22], longJump: [215, 209, 203, 197, 191, 185, 178, 169, 160, 150], pushups: [30, 27, 24, 22, 19, 16, 13, 9, 6, 2], run: [1840, 1780, 1720, 1659, 1598, 1537, 1475, 1406, 1338, 1270] }
+        };
+        const maleStandards = JSON.parse(JSON.stringify(stdData));
+        const femaleStandards = JSON.parse(JSON.stringify(stdData));
+
+        function getYearKey(yearStr) {
+            let y = parseInt(yearStr);
+            if (y <= 2009) return '2009';
+            if (y >= 2014) return '2014';
+            return y.toString();
+        }
+
+        function calcScore(value, array) {
+            if (value === '' || value === null) return 0;
+            let val = parseFloat(value);
+            for (let i = 0; i < 10; i++) {
+                if (val >= array[i]) return 10 - i;
+            }
+            return 0;
+        }
+
+        function evaluateStudent(s) {
+            const yKey = getYearKey(s.year);
+            const std = s.gender === 'M' ? maleStandards[yKey] : femaleStandards[yKey];
+            
+            let sc = {
+                sitAndReach: s.sitAndReach !== '' ? calcScore(s.sitAndReach, std.sitAndReach) : null,
+                situps: s.situps !== '' ? calcScore(s.situps, std.situps) : null,
+                longJump: s.longJump !== '' ? calcScore(s.longJump, std.longJump) : null,
+                pushups: s.pushups !== '' ? calcScore(s.pushups, std.pushups) : null,
+                run: s.run !== '' ? calcScore(s.run, std.run) : null
+            };
+
+            let total = 0;
+            let isComplete = true;
+            let minScore = 99;
+            let minItem = '';
+            
+            const items = [{k:'sitAndReach', n:'坐地前伸'}, {k:'situps', n:'仰臥起坐'}, {k:'longJump', n:'立定跳遠'}, {k:'pushups', n:'掌上壓'}, {k:'run', n:'9分鐘跑'}];
+
+            items.forEach(item => {
+                if (sc[item.k] === null) {
+                    isComplete = false;
+                } else {
+                    total += sc[item.k];
+                    if (sc[item.k] < minScore) {
+                        minScore = sc[item.k];
+                        minItem = item.n;
+                    }
+                }
+            });
+
+            let medal = "未完成";
+            let color = "bg-gray-200 text-gray-700 border-gray-300";
+            if (isComplete) {
+                if (total >= 42) { medal = "🥇 金獎"; color = "bg-gradient-to-r from-yellow-300 to-yellow-500 text-white"; }
+                else if (total >= 34) { medal = "🥈 銀獎"; color = "bg-gradient-to-r from-gray-300 to-gray-400 text-white"; }
+                else if (total >= 26) { medal = "🥉 銅獎"; color = "bg-gradient-to-r from-amber-500 to-amber-700 text-white"; }
+                else if (total >= 15) { medal = "✅ 合格"; color = "bg-green-500 text-white"; }
+                else { medal = "💪 需努力"; color = "bg-red-500 text-white"; }
+            }
+
+            return { scores: sc, total, status: isComplete ? 'completed' : 'incomplete', medal, color, minItem };
+        }
+
+        // View Logic
+        function switchView(view) {
+            document.getElementById('studentPortal').classList.add('hidden');
+            document.getElementById('teacherPortal').classList.add('hidden');
+            document.getElementById('navStudentBtn').classList.remove('bg-blue-800', 'ring-2', 'ring-white');
+            document.getElementById('navTeacherBtn').classList.remove('bg-blue-800', 'ring-2', 'ring-white');
+            
+            if(view === 'student') {
+                document.getElementById('studentPortal').classList.remove('hidden');
+                document.getElementById('navStudentBtn').classList.add('bg-blue-800', 'ring-2', 'ring-white');
+            } else {
+                document.getElementById('teacherPortal').classList.remove('hidden');
+                document.getElementById('navTeacherBtn').classList.add('bg-blue-800', 'ring-2', 'ring-white');
+                renderTable();
+            }
+        }
+        
+        // Initialize active nav button
+        switchView('student');
+
+        function promptTeacherLogin() {
+            document.getElementById('pinInput').value = '';
+            document.getElementById('loginModal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('pinInput').focus(), 100);
+        }
+
+        function verifyPin() {
+            if(document.getElementById('pinInput').value === '1999') {
+                document.getElementById('loginModal').classList.add('hidden');
+                switchView('teacher');
+            } else {
+                alert('密碼錯誤！');
+            }
+        }
+
+        // Student Submit
+        function submitStudentData(e) {
+            e.preventDefault();
+            const s = {
+                id: Date.now().toString(),
+                timestamp: Date.now(),
+                name: document.getElementById('sName').value,
+                gender: document.getElementById('sGender').value,
+                sClass: document.getElementById('sClass').value.toUpperCase(),
+                sClassNo: document.getElementById('sClassNo').value,
+                year: document.getElementById('sYear').value,
+                sitAndReach: document.getElementById('sSitReach').value,
+                situps: document.getElementById('sSitups').value,
+                longJump: document.getElementById('sJump').value,
+                pushups: document.getElementById('sPushups').value,
+                run: document.getElementById('sRun').value
+            };
+            
+            students.push(s);
+            localStorage.setItem('fitnessData', JSON.stringify(students));
+            showStudentResult(s);
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function showStudentResult(s) {
+            document.getElementById('studentForm').classList.add('hidden');
+            document.getElementById('studentResult').classList.remove('hidden');
+            
+            const ev = evaluateStudent(s);
+            
+            const mc = document.getElementById('medalContainer');
+            mc.className = `text-center mb-6 p-6 rounded-2xl shadow-lg border ${ev.color}`;
+            mc.innerHTML = `<div class="text-sm md:text-base opacity-90 mb-1">總評分</div>
+                            <div class="text-4xl md:text-5xl font-black mb-2">${ev.total} <span class="text-xl md:text-2xl font-normal">/ 50</span></div>
+                            <div class="text-2xl md:text-3xl">${ev.medal}</div>`;
+            
+            const sl = document.getElementById('scoreList');
+            const map = [{k:'sitAndReach', n:'坐地前伸'}, {k:'situps', n:'仰臥起坐'}, {k:'longJump', n:'立定跳遠'}, {k:'pushups', n:'掌上壓'}, {k:'run', n:'9分鐘跑'}];
+            
+            sl.innerHTML = map.map(item => 
+                `<li class="flex justify-between items-center border-b border-gray-200 pb-3 last:border-0 last:pb-0">
+                    <span class="font-medium text-gray-600">${item.n}</span> 
+                    <span class="font-bold text-xl ${ev.scores[item.k] === null ? 'text-red-500 text-base' : 'text-blue-600'}">
+                        ${ev.scores[item.k] !== null ? ev.scores[item.k] + ' <span class="text-sm font-normal text-gray-500">分</span>' : '<span class="bg-red-100 text-red-600 px-2 py-1 rounded text-sm">未完成</span>'}
+                    </span>
+                </li>`
+            ).join('');
+
+            // Advice
+            let adv = "您的表現很棒！請繼續保持運動習慣。";
+            if(ev.minItem) {
+                if(ev.minItem === '坐地前伸') adv = "建議多做靜態拉筋，如大腿後側伸展，提升身體柔韌度，減低受傷風險。";
+                if(ev.minItem === '仰臥起坐') adv = "建議加強核心肌群訓練，可透過平板支撐或捲腹來改善，有助穩定軀幹。";
+                if(ev.minItem === '立定跳遠') adv = "建議多做爆發力訓練，如深蹲跳、波比跳，強化下肢力量與協調性。";
+                if(ev.minItem === '掌上壓') adv = "建議加強上肢及胸部肌群，可從膝著地或推牆掌上壓開始練習，循序漸進。";
+                if(ev.minItem === '9分鐘跑') adv = "建議增加心肺耐力訓練，如每週進行兩次20至30分鐘的慢跑、游泳或急步走。";
+            }
+            document.getElementById('studentAdvice').innerText = adv;
+
+            // Chart
+            if(studentChartInstance) studentChartInstance.destroy();
+            const ctx = document.getElementById('studentRadarChart').getContext('2d');
+            
+            Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+            
+            studentChartInstance = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['坐地前伸', '仰臥起坐', '立定跳遠', '掌上壓', '9分鐘跑'],
+                    datasets: [{
+                        label: '得分 (滿分10分)',
+                        data: [ev.scores.sitAndReach||0, ev.scores.situps||0, ev.scores.longJump||0, ev.scores.pushups||0, ev.scores.run||0],
+                        backgroundColor: 'rgba(37, 99, 235, 0.2)',
+                        borderColor: 'rgba(37, 99, 235, 1)',
+                        pointBackgroundColor: 'rgba(37, 99, 235, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(37, 99, 235, 1)',
+                        borderWidth: 2,
+                    }]
+                },
+                options: { 
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { 
+                        r: { 
+                            min: 0, max: 10, ticks: {stepSize: 2, backdropColor: 'transparent'},
+                            pointLabels: { font: { size: window.innerWidth < 640 ? 11 : 13 }, color: '#4b5563' }
+                        } 
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function resetStudentForm() {
+            document.getElementById('studentForm').reset();
+            document.getElementById('studentForm').classList.remove('hidden');
+            document.getElementById('studentResult').classList.add('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Teacher Table & Analytics
+        function renderTable() {
+            const tbody = document.getElementById('teacherTableBody');
+            const search = document.getElementById('filterSearch').value.toLowerCase();
+            const statusF = document.getElementById('filterStatus').value;
+            const sortF = document.getElementById('filterSort').value;
+            
+            let filtered = students.map(s => {
+                const ev = evaluateStudent(s);
+                return {...s, ev};
+            }).filter(s => {
+                if(search && !s.name.toLowerCase().includes(search) && !s.sClass.toLowerCase().includes(search)) return false;
+                if(statusF === 'completed' && s.ev.status !== 'completed') return false;
+                if(statusF === 'incomplete' && s.ev.status !== 'incomplete') return false;
+                if(statusF === 'missing_sitreach' && s.sitAndReach !== '') return false;
+                if(statusF === 'missing_situps' && s.situps !== '') return false;
+                if(statusF === 'missing_longjump' && s.longJump !== '') return false;
+                if(statusF === 'missing_pushups' && s.pushups !== '') return false;
+                if(statusF === 'missing_run' && s.run !== '') return false;
+                return true;
+            });
+
+            filtered.sort((a,b) => {
+                if(sortF === 'newest') return b.timestamp - a.timestamp;
+                if(sortF === 'oldest') return a.timestamp - b.timestamp;
+                if(sortF === 'scoreDesc') return b.ev.total - a.ev.total;
+                if(sortF === 'scoreAsc') return a.ev.total - b.ev.total;
+                if(sortF === 'class') {
+                    let c = a.sClass.localeCompare(b.sClass);
+                    return c !== 0 ? c : parseInt(a.sClassNo) - parseInt(b.sClassNo);
+                }
+                return 0;
+            });
+            
+            if(filtered.length === 0) {
+                tbody.innerHTML = '';
+                document.getElementById('emptyState').classList.remove('hidden');
+            } else {
+                document.getElementById('emptyState').classList.add('hidden');
+                tbody.innerHTML = filtered.map(s => `
+                    <tr class="hover:bg-blue-50 transition-colors border-b">
+                        <td class="p-3 text-center"><input type="checkbox" class="del-chk w-4 h-4 cursor-pointer" value="${s.id}"></td>
+                        <td class="p-3 font-medium">${s.sClass} (${s.sClassNo})</td>
+                        <td class="p-3 font-bold">${s.name}</td>
+                        <td class="p-3 text-gray-500">${s.gender==='M'?'男':'女'}</td>
+                        <td class="p-3 ${s.ev.status==='completed'?'text-green-600':'text-red-500'} font-medium flex items-center gap-1">
+                            ${s.ev.status==='completed'?'<span class="text-xs">✅</span> 完成':'<span class="text-xs">⚠️</span> 缺項'}
+                        </td>
+                        <td class="p-3 font-black text-blue-700 text-lg">${s.ev.total}</td>
+                        <td class="p-3 text-center">${s.sitAndReach===''?'<span class="bg-red-100 text-red-600 px-2 py-0.5 text-xs rounded-full font-medium">缺</span>':s.sitAndReach}</td>
+                        <td class="p-3 text-center">${s.situps===''?'<span class="bg-red-100 text-red-600 px-2 py-0.5 text-xs rounded-full font-medium">缺</span>':s.situps}</td>
+                        <td class="p-3 text-center">${s.longJump===''?'<span class="bg-red-100 text-red-600 px-2 py-0.5 text-xs rounded-full font-medium">缺</span>':s.longJump}</td>
+                        <td class="p-3 text-center">${s.pushups===''?'<span class="bg-red-100 text-red-600 px-2 py-0.5 text-xs rounded-full font-medium">缺</span>':s.pushups}</td>
+                        <td class="p-3 text-center">${s.run===''?'<span class="bg-red-100 text-red-600 px-2 py-0.5 text-xs rounded-full font-medium">缺</span>':s.run}</td>
+                        <td class="p-3 text-center sticky right-0 bg-white group-hover:bg-blue-50 shadow-[-4px_0_4px_rgba(0,0,0,0.02)]">
+                            <button onclick="openEdit('${s.id}')" class="bg-blue-100 hover:bg-blue-600 text-blue-700 hover:text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">修改</button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            updateAnalytics(filtered);
+        }
+
+        function updateAnalytics(data) {
+            let sums = { sitAndReach:0, situps:0, longJump:0, pushups:0, run:0 };
+            let counts = { sitAndReach:0, situps:0, longJump:0, pushups:0, run:0 };
+            let classTotals = {};
+            let classCounts = {};
+
+            data.forEach(s => {
+                if(s.ev.scores.sitAndReach !== null) { sums.sitAndReach += s.ev.scores.sitAndReach; counts.sitAndReach++; }
+                if(s.ev.scores.situps !== null) { sums.situps += s.ev.scores.situps; counts.situps++; }
+                if(s.ev.scores.longJump !== null) { sums.longJump += s.ev.scores.longJump; counts.longJump++; }
+                if(s.ev.scores.pushups !== null) { sums.pushups += s.ev.scores.pushups; counts.pushups++; }
+                if(s.ev.scores.run !== null) { sums.run += s.ev.scores.run; counts.run++; }
+
+                if(!classTotals[s.sClass]) { classTotals[s.sClass] = 0; classCounts[s.sClass] = 0; }
+                classTotals[s.sClass] += s.ev.total;
+                classCounts[s.sClass]++;
+            });
+
+            const avgs = [
+                counts.sitAndReach ? (sums.sitAndReach/counts.sitAndReach).toFixed(1) : 0,
+                counts.situps ? (sums.situps/counts.situps).toFixed(1) : 0,
+                counts.longJump ? (sums.longJump/counts.longJump).toFixed(1) : 0,
+                counts.pushups ? (sums.pushups/counts.pushups).toFixed(1) : 0,
+                counts.run ? (sums.run/counts.run).toFixed(1) : 0
+            ];
+            const labels = ['坐地前伸', '仰臥起坐', '立定跳遠', '掌上壓', '9分鐘跑'];
+
+            if(itemAvgChartInst) itemAvgChartInst.destroy();
+            itemAvgChartInst = new Chart(document.getElementById('itemAvgChart').getContext('2d'), {
+                type: 'bar',
+                data: { labels, datasets: [{ label: '平均得分', data: avgs, backgroundColor: 'rgba(59, 130, 246, 0.7)', borderRadius: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 10 } }, plugins: { legend: { display: false } } }
+            });
+
+            const classLabels = Object.keys(classTotals).sort();
+            const classAvgs = classLabels.map(c => (classTotals[c]/classCounts[c]).toFixed(1));
+
+            if(classAvgChartInst) classAvgChartInst.destroy();
+            classAvgChartInst = new Chart(document.getElementById('classAvgChart').getContext('2d'), {
+                type: 'bar',
+                data: { labels: classLabels, datasets: [{ label: '班級平均總分', data: classAvgs, backgroundColor: 'rgba(139, 92, 246, 0.7)', borderRadius: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 50 } }, plugins: { legend: { display: false } } }
+            });
+
+            // Advice
+            if(data.length === 0) {
+                document.getElementById('teacherAdvice').innerText = "暫無足夠數據生成建議。";
+                return;
+            }
+            let minAvg = 99, minIdx = -1;
+            avgs.forEach((val, i) => { if(val > 0 && parseFloat(val) < minAvg) { minAvg = parseFloat(val); minIdx = i; } });
+            
+            if(minIdx !== -1) {
+                let weakItem = labels[minIdx];
+                let tAdv = `系統分析發現，過濾名單中學生的「${weakItem}」平均表現最弱 (均分 ${minAvg})。\n\n`;
+                if(weakItem === '坐地前伸') tAdv += "👉 建議在體育課的熱身及緩和階段，增加 10 分鐘的下肢與腰背靜態伸展，並教導學生在家每日進行。";
+                if(weakItem === '仰臥起坐') tAdv += "👉 建議將核心訓練（如平板支撐、各種捲腹變體）列為每堂課的恆常體能環節。";
+                if(weakItem === '立定跳遠') tAdv += "👉 建議在課堂加入增強式訓練，例如連續跨欄跳、跳箱或深蹲跳，以發展下肢神經肌肉的爆發力。";
+                if(weakItem === '掌上壓') tAdv += "👉 建議增加胸大肌與三頭肌的訓練。對於力量較弱的學生，務必安排退階動作(如推牆或膝著地)，建立自信後再挑戰標準動作。";
+                if(weakItem === '9分鐘跑') tAdv += "👉 建議設計趣味性的間歇跑或小組接力遊戲，降低枯燥感，逐步提升學生的心肺耐受力，或將熱身跑步時間微調增加。";
+                document.getElementById('teacherAdvice').innerText = tAdv;
+            }
+        }
+
+        // Deletion confirmation logic
+        function closeConfirm() { document.getElementById('confirmModal').classList.add('hidden'); }
+        
+        function confirmBulkDelete() {
+            const checked = Array.from(document.querySelectorAll('.del-chk:checked')).map(cb => cb.value);
+            if(checked.length === 0) {
+                alert("請先勾選要刪除的數據！");
+                return;
+            }
+            document.getElementById('confirmTitle').innerText = "確認刪除已選資料";
+            document.getElementById('confirmMsg').innerText = `確定要永久刪除這 ${checked.length} 筆資料嗎？此操作無法還原。`;
+            document.getElementById('confirmBtn').onclick = () => {
+                students = students.filter(s => !checked.includes(s.id));
+                localStorage.setItem('fitnessData', JSON.stringify(students));
+                document.getElementById('selectAllCheckbox').checked = false;
+                closeConfirm();
+                renderTable();
+            };
+            document.getElementById('confirmModal').classList.remove('hidden');
+        }
+
+        function confirmDeleteAll() {
+            if(students.length === 0) return;
+            document.getElementById('confirmTitle').innerText = "警告：清空所有數據";
+            document.getElementById('confirmMsg').innerText = "這將會永久刪除系統內的所有學生記錄！請確認您已備份並匯出 CSV。";
+            document.getElementById('confirmBtn').onclick = () => {
+                students = [];
+                localStorage.setItem('fitnessData', JSON.stringify(students));
+                closeConfirm();
+                renderTable();
+            };
+            document.getElementById('confirmModal').classList.remove('hidden');
+        }
+
+        function toggleSelectAll(source) {
+            document.querySelectorAll('.del-chk').forEach(cb => cb.checked = source.checked);
+        }
+
+        function generateRandomData() {
+            const classes = ['1A','1B','2A','2B','3A'];
+            for(let i=0; i<5; i++){
+                let complete = Math.random() > 0.3;
+                let y = 2009 + Math.floor(Math.random()*6);
+                students.push({
+                    id: Date.now().toString() + i,
+                    timestamp: Date.now(),
+                    name: '測試生' + Math.floor(Math.random()*1000),
+                    gender: Math.random()>0.5?'M':'F',
+                    sClass: classes[Math.floor(Math.random()*classes.length)],
+                    sClassNo: Math.floor(Math.random()*30)+1,
+                    year: y.toString(),
+                    sitAndReach: complete ? (Math.random()*30 + 10).toFixed(1) : (Math.random()>0.5?'':(Math.random()*30+10).toFixed(1)),
+                    situps: complete ? Math.floor(Math.random()*35 + 10) : '',
+                    longJump: complete ? Math.floor(Math.random()*100 + 120) : Math.floor(Math.random()*100 + 120),
+                    pushups: complete ? Math.floor(Math.random()*30) : '',
+                    run: complete ? Math.floor(Math.random()*800 + 1000) : ''
+                });
+            }
+            localStorage.setItem('fitnessData', JSON.stringify(students));
+            renderTable();
+        }
+
+        // Edit
+        function openEdit(id) {
+            const s = students.find(x => x.id === id);
+            if(!s) return;
+            document.getElementById('editId').value = s.id;
+            document.getElementById('eClass').value = s.sClass;
+            document.getElementById('eClassNo').value = s.sClassNo;
+            document.getElementById('eName').value = s.name;
+            document.getElementById('eSitReach').value = s.sitAndReach;
+            document.getElementById('eSitups').value = s.situps;
+            document.getElementById('eJump').value = s.longJump;
+            document.getElementById('ePushups').value = s.pushups;
+            document.getElementById('eRun').value = s.run;
+            document.getElementById('editModal').classList.remove('hidden');
+        }
+
+        function saveEdit() {
+            const id = document.getElementById('editId').value;
+            const idx = students.findIndex(x => x.id === id);
+            if(idx > -1) {
+                students[idx].sClass = document.getElementById('eClass').value.toUpperCase();
+                students[idx].sClassNo = document.getElementById('eClassNo').value;
+                students[idx].name = document.getElementById('eName').value;
+                students[idx].sitAndReach = document.getElementById('eSitReach').value;
+                students[idx].situps = document.getElementById('eSitups').value;
+                students[idx].longJump = document.getElementById('eJump').value;
+                students[idx].pushups = document.getElementById('ePushups').value;
+                students[idx].run = document.getElementById('eRun').value;
+                localStorage.setItem('fitnessData', JSON.stringify(students));
+                renderTable();
+            }
+            document.getElementById('editModal').classList.add('hidden');
+        }
+
+        // Export
+        function exportCSV() {
+            const rows = [['班別','班號','姓名','性別','出生年','狀態','總分','坐地前伸(cm)','仰臥起坐(次)','立定跳遠(cm)','掌上壓(次)','9分鐘跑(m)']];
+            
+            const search = document.getElementById('filterSearch').value.toLowerCase();
+            const statusF = document.getElementById('filterStatus').value;
+            let filtered = students.map(s => ({...s, ev: evaluateStudent(s)})).filter(s => {
+                if(search && !s.name.toLowerCase().includes(search) && !s.sClass.toLowerCase().includes(search)) return false;
+                if(statusF === 'completed' && s.ev.status !== 'completed') return false;
+                if(statusF === 'incomplete' && s.ev.status !== 'incomplete') return false;
+                if(statusF === 'missing_sitreach' && s.sitAndReach !== '') return false;
+                if(statusF === 'missing_situps' && s.situps !== '') return false;
+                if(statusF === 'missing_longjump' && s.longJump !== '') return false;
+                if(statusF === 'missing_pushups' && s.pushups !== '') return false;
+                if(statusF === 'missing_run' && s.run !== '') return false;
+                return true;
+            });
+
+            filtered.forEach(s => {
+                rows.push([
+                    s.sClass, s.sClassNo, s.name, s.gender==='M'?'男':'女', s.year, 
+                    s.ev.status==='completed'?'完成':'缺項', s.ev.total,
+                    s.sitAndReach===''?'缺':s.sitAndReach, s.situps===''?'缺':s.situps, 
+                    s.longJump===''?'缺':s.longJump, s.pushups===''?'缺':s.pushups, s.run===''?'缺':s.run
+                ]);
+            });
+            let csvContent = "\uFEFF" + rows.map(e => e.join(",")).join("\n");
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `體適能記錄匯出_${new Date().toLocaleDateString().replace(/\//g,'-')}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Standards Modal Logic
+        function openStandardsModal() {
+            document.getElementById('standardsModal').classList.remove('hidden');
+            renderStandardTable();
+        }
+        function closeStandardsModal() {
+            document.getElementById('standardsModal').classList.add('hidden');
+        }
+        function switchStandardTab(gender) {
+            currentStdGender = gender;
+            const activeClass = "flex-1 py-3 font-bold text-blue-600 border-b-2 border-blue-600 text-sm md:text-base bg-blue-50/50";
+            const inactiveClass = "flex-1 py-3 font-bold text-gray-400 text-sm md:text-base border-b hover:bg-gray-50";
+            
+            document.getElementById('tabM').className = gender === 'M' ? activeClass : inactiveClass;
+            document.getElementById('tabF').className = gender === 'F' ? activeClass : inactiveClass;
+            renderStandardTable();
+        }
+        function renderStandardTable() {
+            const y = document.getElementById('stdYearSelect').value;
+            const stdObj = currentStdGender === 'M' ? maleStandards[y] : femaleStandards[y];
+            let html = "";
+            for(let i=0; i<=10; i++){
+                let pts = 10 - i;
+                if(pts === 0) {
+                    html += `<tr class="bg-red-50/50 border-t-2 border-red-100">
+                        <td class="p-3 font-black text-red-500">0</td>
+                        <td class="p-3">< ${stdObj.sitAndReach[9]}</td>
+                        <td class="p-3">< ${stdObj.situps[9]}</td>
+                        <td class="p-3">< ${stdObj.longJump[9]}</td>
+                        <td class="p-3">0</td>
+                        <td class="p-3">< ${stdObj.run[9]}</td>
+                    </tr>`;
+                } else {
+                    let rIdx = i;
+                    html += `<tr class="hover:bg-blue-50 transition-colors">
+                        <td class="p-3 font-bold text-blue-600 text-lg">${pts}</td>
+                        <td class="p-3 text-gray-700">${stdObj.sitAndReach[rIdx]} <span class="text-xs text-gray-400">或以上</span></td>
+                        <td class="p-3 text-gray-700">${stdObj.situps[rIdx]} <span class="text-xs text-gray-400">或以上</span></td>
+                        <td class="p-3 text-gray-700">${stdObj.longJump[rIdx]} <span class="text-xs text-gray-400">或以上</span></td>
+                        <td class="p-3 text-gray-700">${stdObj.pushups[rIdx]} <span class="text-xs text-gray-400">或以上</span></td>
+                        <td class="p-3 text-gray-700">${stdObj.run[rIdx]} <span class="text-xs text-gray-400">或以上</span></td>
+                    </tr>`;
+                }
+            }
+            document.getElementById('stdTableBody').innerHTML = html;
+        }
+        
+        // Modal external click close
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
