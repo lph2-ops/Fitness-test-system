@@ -131,13 +131,21 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6 bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-sm">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6 bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-sm">
             <div>
                 <label class="block text-sm font-bold text-gray-600 mb-1">搜尋姓名/班別</label>
                 <input type="text" id="filterSearch" oninput="renderTable()" placeholder="輸入關鍵字..." class="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
             </div>
             <div>
-                <label class="block text-sm font-bold text-gray-600 mb-1">狀態與缺項過濾</label>
+                <label class="block text-sm font-bold text-gray-600 mb-1">性別過濾</label>
+                <select id="filterGender" onchange="renderTable()" class="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                    <option value="all">全部性別</option>
+                    <option value="M">男</option>
+                    <option value="F">女</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-gray-600 mb-1">狀態與缺項</label>
                 <select id="filterStatus" onchange="renderTable()" class="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
                     <option value="all">全部狀態</option>
                     <option value="completed">✅ 已完成</option>
@@ -149,7 +157,7 @@
                     <option value="missing_run">❌ 缺：9分鐘跑</option>
                 </select>
             </div>
-            <div class="sm:col-span-2 md:col-span-1">
+            <div>
                 <label class="block text-sm font-bold text-gray-600 mb-1">排序方式</label>
                 <select id="filterSort" onchange="renderTable()" class="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
                     <option value="newest">加入時間 (新至舊)</option>
@@ -186,7 +194,7 @@
 
         <!-- Analytics Section -->
         <div class="mt-10 border-t pt-8">
-            <h3 class="text-xl font-bold mb-6 flex items-center gap-2"><span class="text-2xl">📈</span> 全校數據分析</h3>
+            <h3 class="text-xl font-bold mb-6 flex items-center gap-2"><span class="text-2xl">📈</span> 數據分析</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="bg-white p-4 border rounded-xl shadow-sm">
                     <h4 class="text-center font-semibold mb-4 text-gray-700">各測試項目平均得分 (找出最弱項目)</h4>
@@ -198,7 +206,7 @@
                 </div>
             </div>
             <div class="mt-6 bg-yellow-50 border-l-4 border-yellow-500 p-5 rounded-r-xl">
-                <h4 class="font-bold text-yellow-800 mb-2 flex items-center gap-2">📌 教師教學建議 <span class="text-sm font-normal text-yellow-700">(基於全校最弱項目)</span></h4>
+                <h4 class="font-bold text-yellow-800 mb-2 flex items-center gap-2">📌 教師教學建議 <span class="text-sm font-normal text-yellow-700">(基於當前過濾名單最弱項目)</span></h4>
                 <p id="teacherAdvice" class="text-gray-700 leading-relaxed">暫無足夠數據生成建議。</p>
             </div>
         </div>
@@ -305,7 +313,7 @@
         let itemAvgChartInst = null;
         let classAvgChartInst = null;
 
-        // Fitness Standards Data (0-10) Array map: [10pt, 9pt, 8pt, 7pt, 6pt, 5pt, 4pt, 3pt, 2pt, 1pt]
+        // Fitness Standards Data (0-10)
         const stdData = {
             '2014': { sitAndReach: [32, 30, 28, 26, 24, 22, 19, 17, 15, 14], situps: [40, 38, 35, 32, 28, 25, 22, 19, 16, 13], longJump: [172, 165, 158, 151, 144, 137, 132, 125, 118, 111], pushups: [16, 13, 9, 6, 3, 2, 1, 1, 1, 1], run: [1610, 1545, 1480, 1400, 1320, 1255, 1190, 1150, 1110, 1070] },
             '2013': { sitAndReach: [33, 30, 28, 26, 24, 21, 19, 17, 15, 13], situps: [42, 39, 36, 33, 31, 27, 24, 21, 19, 17], longJump: [191, 183, 175, 168, 161, 154, 147, 140, 133, 126], pushups: [20, 16, 12, 9, 6, 5, 4, 3, 2, 1], run: [1680, 1605, 1530, 1450, 1370, 1295, 1220, 1166, 1113, 1060] },
@@ -394,7 +402,6 @@
             }
         }
         
-        // Initialize active nav button
         switchView('student');
 
         function promptTeacherLogin() {
@@ -433,8 +440,6 @@
             students.push(s);
             localStorage.setItem('fitnessData', JSON.stringify(students));
             showStudentResult(s);
-            
-            // Scroll to top
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
@@ -462,7 +467,6 @@
                 </li>`
             ).join('');
 
-            // Advice
             let adv = "您的表現很棒！請繼續保持運動習慣。";
             if(ev.minItem) {
                 if(ev.minItem === '坐地前伸') adv = "建議多做靜態拉筋，如大腿後側伸展，提升身體柔韌度，減低受傷風險。";
@@ -473,7 +477,6 @@
             }
             document.getElementById('studentAdvice').innerText = adv;
 
-            // Chart
             if(studentChartInstance) studentChartInstance.destroy();
             const ctx = document.getElementById('studentRadarChart').getContext('2d');
             
@@ -520,6 +523,7 @@
         function renderTable() {
             const tbody = document.getElementById('teacherTableBody');
             const search = document.getElementById('filterSearch').value.toLowerCase();
+            const genderF = document.getElementById('filterGender').value;
             const statusF = document.getElementById('filterStatus').value;
             const sortF = document.getElementById('filterSort').value;
             
@@ -528,6 +532,7 @@
                 return {...s, ev};
             }).filter(s => {
                 if(search && !s.name.toLowerCase().includes(search) && !s.sClass.toLowerCase().includes(search)) return false;
+                if(genderF !== 'all' && s.gender !== genderF) return false;
                 if(statusF === 'completed' && s.ev.status !== 'completed') return false;
                 if(statusF === 'incomplete' && s.ev.status !== 'incomplete') return false;
                 if(statusF === 'missing_sitreach' && s.sitAndReach !== '') return false;
@@ -624,7 +629,6 @@
                 options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 50 } }, plugins: { legend: { display: false } } }
             });
 
-            // Advice
             if(data.length === 0) {
                 document.getElementById('teacherAdvice').innerText = "暫無足夠數據生成建議。";
                 return;
@@ -634,7 +638,7 @@
             
             if(minIdx !== -1) {
                 let weakItem = labels[minIdx];
-                let tAdv = `系統分析發現，過濾名單中學生的「${weakItem}」平均表現最弱 (均分 ${minAvg})。\n\n`;
+                let tAdv = `系統分析發現，當前過濾名單中學生的「${weakItem}」平均表現最弱 (均分 ${minAvg})。\n\n`;
                 if(weakItem === '坐地前伸') tAdv += "👉 建議在體育課的熱身及緩和階段，增加 10 分鐘的下肢與腰背靜態伸展，並教導學生在家每日進行。";
                 if(weakItem === '仰臥起坐') tAdv += "👉 建議將核心訓練（如平板支撐、各種捲腹變體）列為每堂課的恆常體能環節。";
                 if(weakItem === '立定跳遠') tAdv += "👉 建議在課堂加入增強式訓練，例如連續跨欄跳、跳箱或深蹲跳，以發展下肢神經肌肉的爆發力。";
@@ -745,9 +749,12 @@
             const rows = [['班別','班號','姓名','性別','出生年','狀態','總分','坐地前伸(cm)','仰臥起坐(次)','立定跳遠(cm)','掌上壓(次)','9分鐘跑(m)']];
             
             const search = document.getElementById('filterSearch').value.toLowerCase();
+            const genderF = document.getElementById('filterGender').value;
             const statusF = document.getElementById('filterStatus').value;
+            
             let filtered = students.map(s => ({...s, ev: evaluateStudent(s)})).filter(s => {
                 if(search && !s.name.toLowerCase().includes(search) && !s.sClass.toLowerCase().includes(search)) return false;
+                if(genderF !== 'all' && s.gender !== genderF) return false;
                 if(statusF === 'completed' && s.ev.status !== 'completed') return false;
                 if(statusF === 'incomplete' && s.ev.status !== 'incomplete') return false;
                 if(statusF === 'missing_sitreach' && s.sitAndReach !== '') return false;
@@ -823,7 +830,6 @@
             document.getElementById('stdTableBody').innerHTML = html;
         }
         
-        // Modal external click close
         window.onclick = function(event) {
             if (event.target.classList.contains('modal')) {
                 event.target.classList.add('hidden');
